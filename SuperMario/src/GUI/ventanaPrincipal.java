@@ -44,48 +44,51 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
         // cargar suelo
         imgSuelo = new ImageIcon("src/resources/suelo.png").getImage();
 
-        // jugador lógico
-        jugador = new player(470, 420);
+        jugador = new player(465, 0);
 
         // jugador visible
         Mario = new JPanel();
         Mario.setBackground(new Color(0x33FF66));
-        Mario.setBounds(465, 405, jugador.getWidth(), jugador.getHeight());
+        Mario.setBounds(jugador.getX(), jugador.getY(), player.WIDTH, player.HEIGHT);
         contentPane.add(Mario);
 
         // bucle
         gameTimer = new Timer(16, e -> {
-            update();
-            Mario.setBounds(jugador.getX(), jugador.getY(), jugador.getWidth(), jugador.getHeight());
+            // mover player según teclas (tu lógica está en player)
+            if (leftPressed)  { jugador.moveLeft();  worldOffset -= 4; }
+            if (rightPressed) { jugador.moveRight(); worldOffset += 4; }
+
+            // piso actual: borde inferior - alto suelo - alto jugador
+            int groundY = contentPane.getHeight() - GROUND_H - player.HEIGHT;
+            jugador.update(groundY); // <<< pasamos el piso REAL
+
+            // sincronizar sprite
+            Mario.setBounds(jugador.getX(), jugador.getY(), player.WIDTH, player.HEIGHT);
+
             contentPane.repaint();
-            jugador.update();
         });
         gameTimer.start();
 
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
-    }
 
-    private void update() {
-        if (leftPressed) {
-            jugador.moveLeft();
-            worldOffset -= 4; // mover mundo a la derecha
-        }
-        if (rightPressed) {
-            jugador.moveRight();
-            worldOffset += 4; // mover mundo a la izquierda
-        }
-        
+        // Al abrir la ventana, el panel ya tiene tamaño: ubicamos al jugador en el piso real
+        addWindowListener(new WindowAdapter() {
+            @Override public void windowOpened(WindowEvent e) {
+                requestFocusInWindow();
+                int groundY = contentPane.getHeight() - GROUND_H - player.HEIGHT;
+                jugador.setY(groundY);
+                Mario.setBounds(jugador.getX(), jugador.getY(), player.WIDTH, player.HEIGHT);
+            }
+        });
     }
 
     private void drawGround(Graphics2D g2, Image tile, int posY, int height, int offset) {
         if (tile == null) return;
-
         int tileW = tile.getWidth(null);
         if (tileW <= 0) return;
 
-        // wrap horizontal usando worldOffset
         int xOffset = -(offset % tileW);
         if (xOffset > 0) xOffset -= tileW;
 
@@ -94,8 +97,6 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
         }
     }
 
-    
-    
     // teclado
     @Override public void keyPressed(KeyEvent e) {
         int k = e.getKeyCode();

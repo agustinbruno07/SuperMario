@@ -1,7 +1,7 @@
 package GUI;
 
 public class player {
-    public static final int WIDTH = 80, HEIGHT = 80;
+    public static final int WIDTH = 40, HEIGHT = 40	;
 
     private int x, y;
     private final int speed = 8;
@@ -10,7 +10,6 @@ public class player {
     private int velY = 0;        
     private final int GRAV = 1;  
     private final int JUMP = -16;
-    private final int GROUND_Y = 600; 
     private boolean enAire = false;
 
     public player(int x, int y) { this.x = x; this.y = y; }
@@ -25,13 +24,13 @@ public class player {
         }
     }
 
-    
-    public void update() {
+    // ahora el piso viene de la ventana
+    public void update(int groundY) {
         if (enAire) {
             y += velY;
             velY += GRAV;
-            if (y >= GROUND_Y) { 
-                y = GROUND_Y;
+            if (y >= groundY) {
+                y = groundY;
                 velY = 0;
                 enAire = false;
             }
