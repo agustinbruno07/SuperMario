@@ -26,8 +26,8 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 	private ArrayList<Rectangle> huecosRect = new ArrayList<>();
 	private ArrayList<Rectangle> tuberias = new ArrayList<>();
 	private boolean huecosGenerados = false;
-	private final int PIPE_EMBED_MIN = 6;   // px mínimos a tapar de las tuberias
-	private final int PIPE_EMBED_MAX = 18;  // px máximos a tapar de las tuberias
+	private final int PIPE_EMBED_MIN = 6;   // px mÃ­nimos a tapar de las tuberias
+	private final int PIPE_EMBED_MAX = 18;  // px mÃ¡ximos a tapar de las tuberias
 	private static final int PIPE_PASS_TOL = 6; // px de tolerancia de tuberias para que no se teletransporte
 	private ArrayList<enemigo> enemigos = new ArrayList<>();
 	private ImageIcon enemy;
@@ -102,7 +102,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 		contentPane.add(numVida);
 		contentPane.repaint();
 
-		ventanaInicio.iniciarMusicaFondo("src/resources/sound/musicaJuego.wav");
+		ventanaInicio.iniciarMusicaFondo("src/resources/sound/musicaJuego.mp3");
 
 		gameTimer = new Timer(16, e -> {
 			int panelW = contentPane.getWidth();
@@ -113,7 +113,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 
 			int step = 10;
 
-			// Movimiento IZQUIERDA con bloqueo por tubería
+			// Movimiento IZQUIERDA con bloqueo por tuberÃ­a
 			if (leftPressed) {
 				if (jugador.getX() > centerX) {
 					int nuevaX = jugador.getX() - step;
@@ -124,7 +124,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 					int nuevoOffset = Math.max(0, mapOffset - step);
 					Rectangle futuro = new Rectangle(nuevoOffset + jugador.getX(), jugador.getY(), player.WIDTH, player.HEIGHT);
 					if (esParedContraTuberia(futuro, jugador.isEnAire())) {
-					    // clamp: dejar al jugador pegado a la derecha de la tubería
+					    // clamp: dejar al jugador pegado a la derecha de la tuberÃ­a
 					    Rectangle pared = null;
 					    for (Rectangle t : tuberias) if (futuro.intersects(t)) { pared = t; break; }
 					    if (pared != null) {
@@ -136,7 +136,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 			    }
 			}
 
-			// Movimiento DERECHA con bloqueo por tubería
+			// Movimiento DERECHA con bloqueo por tuberÃ­a
 			if (rightPressed) {
 				if (jugador.getX() < centerX) {
 					int nuevaX = jugador.getX() + step;
@@ -160,7 +160,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 
 			int groundY = contentPane.getHeight() - GROUND_H - player.HEIGHT;
 
-			// Verificar si el jugador está sobre un hueco
+			// Verificar si el jugador estÃ¡ sobre un hueco
 			boolean sobreHueco = false;
 			int jugadorIzquierda = mapOffset + jugador.getX();
 			int jugadorDerecha = jugadorIzquierda + player.WIDTH;
@@ -172,13 +172,30 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 			        break;
 			    }
 			}
-			
+
 			if (sobreHueco && !jugador.isEnAire()) {
 			    jugador.setEnAire(true);
 			    cayendoEnHueco = true;
 			}
-
-			// Verificar si está sobre una tubería (pies cerca del tope)
+			
+			if (cayendoEnHueco) {
+			    int groundY1 = contentPane.getHeight() - GROUND_H - player.HEIGHT;
+			    // Si cayó más de 50 pixels debajo del suelo normal, verificar si sigue en hueco
+			    if (jugador.getY() > groundY1 + 50) {
+			        // Si ya no está sobre un hueco (se "teletransportó"), forzar game over
+			        if (!sobreHueco) {
+			            perder();
+			            return;
+			        }
+			    }
+			    // Si tocó el suelo estando en estado cayendoEnHueco, también perder
+			    if (jugador.getY() >= groundY1 && !sobreHueco) {
+			        perder();
+			        return;
+			    }
+			}
+			
+			// Verificar si estÃ¡ sobre una tuberÃ­a (pies cerca del tope)
 			Rectangle tuberiaDebajo = null;
 			int mejorTuberiaY = groundY;
 
@@ -350,21 +367,21 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 		});
 	}
 
-	// Función que bloquea el movimiento lateral si hay tubería y el jugador no está saltando por encima
+	// FunciÃ³n que bloquea el movimiento lateral si hay tuberÃ­a y el jugador no estÃ¡ saltando por encima
 	private boolean puedeMoverseA(int nuevaX) {
 		int jugadorY = jugador.getY();
 		Rectangle nuevoRect = new Rectangle(mapOffset + nuevaX, jugadorY, player.WIDTH, player.HEIGHT);
 		for (Rectangle tuberia : tuberias) {
-			if (nuevoRect.intersects(tuberia)) {// hay colisión
+			if (nuevoRect.intersects(tuberia)) {// hay colisiÃ³n
 				int jugadorBottom = jugadorY + player.HEIGHT;// pies del jugador
-				int tuberiaTop = tuberia.y;// tope de la tubería
+				int tuberiaTop = tuberia.y;// tope de la tuberÃ­a
 
-				// Permitir pasar si está saltando y sus pies están por encima de la tubería
+				// Permitir pasar si estÃ¡ saltando y sus pies estÃ¡n por encima de la tuberÃ­a
 				if (jugador.isEnAire() && jugadorBottom <= tuberiaTop) {
 					continue;
 				}
 
-				// Permitir estar sobre la tubería (pies cerca del tope)
+				// Permitir estar sobre la tuberÃ­a (pies cerca del tope)
 				int margenVertical = 5;
 				if (jugadorBottom >= tuberiaTop - margenVertical && jugadorBottom <= tuberiaTop + margenVertical) {
 					continue;
@@ -466,10 +483,10 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 	        if (tuberiaX + tuberia.width > 0 && tuberiaX < panelW) {
 	            int tuberiaY = groundY - tuberia.height;
 
-	            // 1) Dibujar la tubería normal (sin moverla)
+	            // 1) Dibujar la tuberÃ­a normal (sin moverla)
 	            g2.drawImage(imgTuberia, tuberiaX, tuberiaY, tuberia.width, tuberia.height, null);
 
-	            // 2) “Enterrar” visualmente la base con una franja del suelo por encima
+	            // 2) â€œEnterrarâ€� visualmente la base con una franja del suelo por encima
 	            if (imgSuelo != null) {
 	                int bury = Math.max(PIPE_EMBED_MIN, Math.min(PIPE_EMBED_MAX, tuberia.height / 10));
 	                int overlayY = groundY - bury;
@@ -511,7 +528,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 	private void generarTuberias() {
 		tuberias.clear();
 
-		int anchoPipe = 120; // Tuberías más anchas
+		int anchoPipe = 120; // TuberÃ­as mÃ¡s anchas
 		int[] alturasDisponibles = { 100, 120, 140, 160, 200};
 		int distanciaMinima = 200;
 		int distanciaMaxima = 800;
@@ -537,7 +554,7 @@ public class ventanaPrincipal extends JFrame implements KeyListener {
 			posicionActual += distancia;
 		}
 
-		System.out.println("Tuberías generadas: " + tuberias.size());
+		System.out.println("TuberÃ­as generadas: " + tuberias.size());
 	}
 
 	@Override
@@ -629,15 +646,15 @@ private boolean esParedContraTuberia(Rectangle futuroJugadorWorld, boolean enAir
         if (!futuroJugadorWorld.intersects(t)) continue;
 
         int tuberiaTop = t.y;
-        // Si está en el aire y sus pies quedan por encima del tope (+ tol), NO es pared
+        // Si estÃ¡ en el aire y sus pies quedan por encima del tope (+ tol), NO es pared
         if (enAire && jugadorBottom <= tuberiaTop + PIPE_PASS_TOL) {
             continue;
         }
-        // Caso especial: apoyado “justo” sobre el tope, tampoco bloquear lateral
+        // Caso especial: apoyado â€œjustoâ€� sobre el tope, tampoco bloquear lateral
         if (Math.abs(jugadorBottom - tuberiaTop) <= PIPE_PASS_TOL) {
             continue;
         }
-        return true; // esto sí es pared
+        return true; // esto sÃ­ es pared
     }
     return false;
 }

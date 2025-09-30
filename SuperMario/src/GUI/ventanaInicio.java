@@ -18,7 +18,7 @@ public class ventanaInicio extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000,700);
         setResizable(false);
-        setTitle("Space Invaders");
+        setTitle("Super Mario");
         imagenFondo1 = new ImageIcon("src/resources/inicio.png").getImage();
         
         contentPane = new JPanel() {
@@ -33,13 +33,12 @@ public class ventanaInicio extends JFrame {
         
         setContentPane(contentPane);
         contentPane.setLayout(null);
-
         JButton btnIniciar = new JButton("Iniciar Juego");
         btnIniciar.setForeground(Color.BLACK);
         btnIniciar.setBackground(Color.LIGHT_GRAY);
         btnIniciar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                reproducirSonido("src/resources/sound/BotonPrincipal.wav"); 
+                reproducirSonido("src/resources/sound/BotonPrincipal.mp3"); 
                 dispose();
                 ventanaPrincipal ventana = new ventanaPrincipal();
                 ventana.setVisible(true);

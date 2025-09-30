@@ -8,7 +8,7 @@ public class ganarNivel extends JPanel {
         setBounds(0, 0, 1000, 700);
         setOpaque(false);
         setBackground(Color.BLACK);
-        JLabel titulo = new JLabel("Â¡Ganaste!");
+        JLabel titulo = new JLabel("¡Ganaste!");
         titulo.setFont(new Font("Tahoma", Font.ITALIC, 38));
         titulo.setBounds(408, 84, 192, 91);
         add(titulo);
