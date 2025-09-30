@@ -19,7 +19,7 @@ public class gameOver extends JPanel {
         btnRetry.addActionListener(e -> {
             JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             topFrame.dispose();
-            new ventanaPrincipal().setVisible(true); // reinicia el juego
+            new ventanaPrincipal(1).setVisible(true); // reinicia el juego en nivel 1
         });
         add(btnRetry);
     }
