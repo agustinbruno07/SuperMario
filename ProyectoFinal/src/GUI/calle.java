@@ -12,10 +12,12 @@ public class calle extends JPanel implements KeyListener {
     private JLabel labelPuerta;
     private JLabel mensajeLabel;
     private Timer mensajeTimer;
+    private colisionCalle colisiones; // 🔹 NUEVO
 
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private boolean estaEnPuerta = false;
-    private boolean estaEnTransicion = false;
+    private boolean estaEnTransicionIzquierda = false; // Para casa izquierda
+    private boolean estaEnTransicionDerecha = false;   // NUEVO: Para casa derecha
 
     public calle() {
         this(641, 692); 
@@ -29,6 +31,9 @@ public class calle extends JPanel implements KeyListener {
 
         fondo = new ImageIcon("src/resources/images/puerta.png").getImage();
         player = new jugador(startX, startY);
+        
+        // 🔹 CARGAR MÁSCARA DE COLISIÓN
+        colisiones = new colisionCalle("src/resources/images/colisionesPuerta.png");
 
         labelPuerta = new JLabel();
         labelPuerta.setBounds(641, 489, 50, 50);
@@ -58,14 +63,25 @@ public class calle extends JPanel implements KeyListener {
             int h = Math.max(1, getHeight());
             Rectangle bounds = new Rectangle(0, 0, w, h);
 
+            // 🔹 GUARDAR POSICIÓN ANTERIOR
+            int oldX = player.getX();
+            int oldY = player.getY();
+
             if (upPressed)    player.moveUp();
             if (downPressed)  player.moveDown();
             if (leftPressed)  player.moveLeft();
             if (rightPressed) player.moveRight();
             
+            // 🔹 VERIFICAR COLISIÓN
+            if (colisiones.hayColision(player.getBounds(), w, h)) {
+                // Si hay colisión, volver a la posición anterior
+                player.setPosition(oldX, oldY);
+            }
+            
             player.clampTo(bounds);
             verificarPosicionPuerta();
-            verificarPosicionTransicion();
+            verificarPosicionTransicionIzquierda();
+            verificarPosicionTransicionDerecha();
             repaint();
         });
         gameLoop.start();
@@ -78,10 +94,19 @@ public class calle extends JPanel implements KeyListener {
         estaEnPuerta = jugadorBounds.intersects(puertaBounds);
     }
 
-    private void verificarPosicionTransicion() {
+    private void verificarPosicionTransicionIzquierda() {
         Rectangle jugadorBounds = player.getBounds();
         
-        estaEnTransicion = (jugadorBounds.x <= 0 && Math.abs(jugadorBounds.y - 286) <= 20);
+        // Para casa izquierda (x=0, y=286)
+        estaEnTransicionIzquierda = (jugadorBounds.x <= 0 && Math.abs(jugadorBounds.y - 286) <= 20);
+    }
+
+    // NUEVO MÃ‰TODO: Verificar posiciÃ³n para casa derecha
+    private void verificarPosicionTransicionDerecha() {
+        Rectangle jugadorBounds = player.getBounds();
+        
+        // Para casa derecha (x=1302, y=267) con margen de Â±20 pÃ­xeles
+        estaEnTransicionDerecha = (jugadorBounds.x >= 1302 && Math.abs(jugadorBounds.y - 267) <= 20);
     }
 
     private void cambiarACasaIzquierda() {
@@ -91,6 +116,23 @@ public class calle extends JPanel implements KeyListener {
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (parentFrame != null) {
             casaIzquierda siguientePanel = new casaIzquierda(parentFrame);
+            
+            parentFrame.getContentPane().removeAll();
+            parentFrame.getContentPane().add(siguientePanel);
+            parentFrame.revalidate();
+            parentFrame.repaint();
+            
+            SwingUtilities.invokeLater(siguientePanel::requestFocusInWindow);
+        }
+    }
+
+    private void cambiarACasaDerecha() {
+        if (gameLoop != null && gameLoop.isRunning()) gameLoop.stop();
+        if (mensajeTimer != null && mensajeTimer.isRunning()) mensajeTimer.stop();
+        
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (parentFrame != null) {
+            casaDerecha siguientePanel = new casaDerecha(parentFrame);
             
             parentFrame.getContentPane().removeAll();
             parentFrame.getContentPane().add(siguientePanel);
@@ -145,6 +187,7 @@ public class calle extends JPanel implements KeyListener {
         if (key == KeyEvent.VK_A || key == KeyEvent.VK_LEFT)  leftPressed = true;
         if (key == KeyEvent.VK_D || key == KeyEvent.VK_RIGHT) rightPressed = true;
         
+        // Verificar si el cofre fue abierto
         if (key == KeyEvent.VK_E && estaEnPuerta) {
             if (EstadoJuego.isCofreAbierto()) {
                 cambiarACasaPrincipal();
@@ -153,8 +196,14 @@ public class calle extends JPanel implements KeyListener {
             }
         }
         
-        if (key == KeyEvent.VK_A && estaEnTransicion) {
+        // Para casa izquierda (tecla A)
+        if (key == KeyEvent.VK_A && estaEnTransicionIzquierda) {
             cambiarACasaIzquierda();
+        }
+        
+        // NUEVO: Para casa derecha (tecla D)
+        if (key == KeyEvent.VK_D && estaEnTransicionDerecha) {
+            cambiarACasaDerecha();
         }
     }
 

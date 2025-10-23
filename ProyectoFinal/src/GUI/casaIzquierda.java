@@ -16,9 +16,11 @@ public class casaIzquierda extends JPanel implements KeyListener {
     private boolean estaEnSalida = false;
     private boolean estaEnCofre = false;
     private boolean cofreAbierto = false;
+    private colisionCalle colisiones;
+
     
     private final int cofreX = 357;
-    private final int cofreY = 515;
+    private final int cofreY = 600;
     private final int cofreAncho = 100;
     private final int cofreAlto = 100;
 
@@ -28,7 +30,9 @@ public class casaIzquierda extends JPanel implements KeyListener {
         setFocusTraversalKeysEnabled(false);
 
         fondo = new ImageIcon("src/resources/images/casa_izquierda.png").getImage();
-
+        
+        colisiones = new colisionCalle("src/resources/images/casa_izquierdaColisiones.png");
+        	
         if (EstadoJuego.isCofreAbierto()) {
             imagenCofre = new ImageIcon("src/resources/images/cofreAbierto.png").getImage();
             cofreAbierto = true;
@@ -61,16 +65,22 @@ public class casaIzquierda extends JPanel implements KeyListener {
             int h = Math.max(1, getHeight());
             Rectangle bounds = new Rectangle(0, 0, w, h);
 
+            int oldX = player.getX();
+            int oldY = player.getY();
+
             if (upPressed)    player.moveUp();
             if (downPressed)  player.moveDown();
             if (leftPressed)  player.moveLeft();
             if (rightPressed) player.moveRight();
-            
+
+            // 🔹 Verificar colisiones con la máscara
+            if (colisiones.hayColision(player.getBounds(), w, h)) {
+                player.setPosition(oldX, oldY);
+            }
+
             player.clampTo(bounds);
-            
             verificarPosicionSalida();
             verificarPosicionCofre();
-            
             repaint();
         });
         gameLoop.start();

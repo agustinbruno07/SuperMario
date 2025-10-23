@@ -32,7 +32,6 @@ public class dialogo1 extends JPanel {
 
 		imagenDialogo = new ImageIcon("src/resources/images/dialogoVacioBombrito.png").getImage();
 		
-		// Fade in
 		fadeTimer = new Timer(30, e -> {
 			alpha += 0.02f;
 			if (alpha >= 1.0f) {
@@ -80,7 +79,7 @@ public class dialogo1 extends JPanel {
 	}
 
 	private void iniciarTexto() {
-		// ðŸ”¹ Timer que va agregando una letra cada 40 ms
+		// Ã°Å¸â€�Â¹ Timer que va agregando una letra cada 40 ms
 		textoTimer = new Timer(40, e -> {
 			if (indiceTexto < textoCompleto.length()) {
 				textoMostrado += textoCompleto.charAt(indiceTexto);
@@ -129,9 +128,9 @@ public class dialogo1 extends JPanel {
 		if (textoTimer != null && textoTimer.isRunning())
 			textoTimer.stop();
 
-		// Ir al segundo diálogo (dialogo2)
+		// Ir al segundo diÃ¡logo (dialogo2)
 		parentFrame.getContentPane().removeAll();
-		parentFrame.getContentPane().add(new dialogo2(parentFrame)); // 🔹 Cambia esto
+		parentFrame.getContentPane().add(new dialogo2(parentFrame)); // ðŸ”¹ Cambia esto
 		parentFrame.revalidate();
 		parentFrame.repaint();
 	}
@@ -159,13 +158,12 @@ public class dialogo1 extends JPanel {
 			int y = (panelHeight - nuevoAlto) / 2;
 
 			if (fadeCompletado && animacionTimer != null && animacionTimer.isRunning()) {
-				y += (offsetY1 + offsetY2) / 2; // efecto â€œflotaciÃ³nâ€�
+				y += (offsetY1 + offsetY2) / 2;
 			}
 
 			g2d.drawImage(imagenDialogo, x, y, nuevoAncho, nuevoAlto, this);
 			g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 
-			// ðŸ”¹ Mostrar el texto del diÃ¡logo (centrado en el cuadro)
 			g2d.setColor(Color.WHITE);
 			g2d.setFont(new Font("Pixel Arial 11", Font.PLAIN, 22));
 
