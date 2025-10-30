@@ -7,57 +7,51 @@ import javax.swing.JLabel;
 import javax.swing.JFrame;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Dimension;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Dimension;
 import java.awt.Toolkit;
 
 public class ventanaInicio extends JPanel {
     private Image imagenFondo;
     private JFrame parentFrame;
+    // Resolución fija del juego
+    private static final int FIXED_WIDTH = 1366;
+    private static final int FIXED_HEIGHT = 768;
     
     public ventanaInicio(JFrame frame) {
         this.parentFrame = frame;
         setLayout(null);
+        setFocusable(true);
         imagenFondo = null;
         Musica.reproducir("/resources/sonidos/sonidoInicio.wav");
 
-        // Construir UI inicial según el tamaño actual (o resolución configurada si aún no visible)
-        Dimension parentSize = parentFrame.getSize();
-        int width = parentSize.width <= 0 ? config.getResolucionAncho() : parentSize.width;
-        int height = parentSize.height <= 0 ? config.getResolucionAlto() : parentSize.height;
-        createOrUpdateUI(width, height);
+        // Forzar tamaño fijo
+        setPreferredSize(new Dimension(FIXED_WIDTH, FIXED_HEIGHT));
 
-        // Reconstruir y reescalar cuando el panel cambie de tamaño (por ejemplo al entrar en fullscreen)
-        this.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                Dimension d = getSize();
-                createOrUpdateUI(d.width, d.height);
-            }
-        });
+        // Construir UI para la resolución fija
+        createOrUpdateUI(FIXED_WIDTH, FIXED_HEIGHT);
+    }
+
+    // Permite actualizar la referencia al frame padre si re-creamos el JFrame (fallback fullscreen)
+    public void setParentFrame(JFrame frame) {
+        this.parentFrame = frame;
     }
 
     private void createOrUpdateUI(int width, int height) {
         removeAll();
-        // Establecer tamaño preferido si es necesario
+        // Establecer tamaño preferido
         if (width > 0 && height > 0) setPreferredSize(new Dimension(width, height));
 
-        // Escalado relativo a una resolución base (para que la UI mantenga proporciones)
-        final int BASE_W = 1920;
-        final int BASE_H = 1080;
-        double scale = Math.min((double) width / BASE_W, (double) height / BASE_H);
-        if (scale <= 0) scale = 1.0;
-        int buttonWidth = Math.max(120, (int) Math.round(407 * scale));
-        int buttonHeight = Math.max(32, (int) Math.round(46 * scale));
-        int startX = (width - buttonWidth) / 2;
-        int startY = (int) Math.round(height * 0.45);
+        // Usar tamaños fijos pensados para 1366x768
+        final int buttonWidth = 407;
+        final int buttonHeight = 46;
+        final int startX = (width - buttonWidth) / 2;
+        final int startY = (int) Math.round(height * 0.45);
 
-        // Cargar iconos y fondo
+        // Cargar iconos y fondo (misma lógica que antes)
         ImageIcon iconConfig = new ImageIcon();
         ImageIcon iconIniciar = new ImageIcon();
         ImageIcon iconSalir = new ImageIcon();
@@ -97,7 +91,7 @@ public class ventanaInicio extends JPanel {
             // deja iconos vacíos
         }
 
-        // Escalar íconos al tama�o de los botones para mantener proporciones en distintas resoluciones
+        // Escalar iconos al tamaño de los botones
         try {
             if (iconIniciar.getImage() != null) {
                 Image img = iconIniciar.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH);
@@ -139,7 +133,7 @@ public class ventanaInicio extends JPanel {
         });
 
         JButton btnConfig = new JButton();
-        btnConfig.setBounds(startX, startY + buttonHeight + (int)(10 * scale), buttonWidth, buttonHeight);
+        btnConfig.setBounds(startX, startY + buttonHeight + 10, buttonWidth, buttonHeight);
         btnConfig.setIcon(iconConfig);
         btnConfig.setBorderPainted(false);
         btnConfig.setContentAreaFilled(false);
@@ -154,7 +148,7 @@ public class ventanaInicio extends JPanel {
         });
 
         JButton btnRanking = new JButton();
-        btnRanking.setBounds(startX, startY + 2*(buttonHeight + (int)(10 * scale)), buttonWidth, buttonHeight);
+        btnRanking.setBounds(startX, startY + 2*(buttonHeight + 10), buttonWidth, buttonHeight);
         btnRanking.setIcon(iconRanking);
         btnRanking.setBorderPainted(false);
         btnRanking.setContentAreaFilled(false);
@@ -172,7 +166,7 @@ public class ventanaInicio extends JPanel {
         });
 
         JButton btnSalir = new JButton();
-        btnSalir.setBounds(startX, startY + 3*(buttonHeight + (int)(10 * scale)), buttonWidth, buttonHeight);
+        btnSalir.setBounds(startX, startY + 3*(buttonHeight + 10), buttonWidth, buttonHeight);
         btnSalir.setIcon(iconSalir);
         btnSalir.setBorderPainted(false);
         btnSalir.setContentAreaFilled(false);
@@ -195,74 +189,81 @@ public class ventanaInicio extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (imagenFondo != null) {
+            // Dibujar usando el tamaño actual del panel para que funcione en fullscreen
             g.drawImage(imagenFondo, 0, 0, getWidth(), getHeight(), this);
         }
     }
     
     public static void mostrarVentana() {
-         JFrame frame = new JFrame("Proyecto Final");
-        // Usar undecorated solo si la configuraci�n lo solicita
-        boolean pantalla = config.isPantallaCompleta();
-        frame.setUndecorated(pantalla);
-         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-         
+         // Usar una referencia final mutable para el JFrame para permitir uso dentro de lambdas
+         final JFrame[] frameRef = new JFrame[1];
+         JFrame initial = new JFrame("Proyecto Final");
+         initial.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         // Intentar abrir en pantalla completa borderless por defecto
          GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
          GraphicsDevice gd = ge.getDefaultScreenDevice();
-         
-         // Obtener la resoluci�n configurada
-         int width = config.getResolucionAncho();
-         int height = config.getResolucionAlto();
-         
-         // Establecer el tama�o del frame
+
+         initial.setUndecorated(true);
+         ventanaInicio panel = new ventanaInicio(initial);
+         initial.getContentPane().add(panel);
+         initial.setResizable(false);
+         initial.setVisible(true);
+
          Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-         if (pantalla) {
-            // En pantalla completa usamos el tama�o de pantalla
-            width = screenSize.width;
-            height = screenSize.height;
-            frame.setSize(width, height);
-            frame.getContentPane().add(new ventanaInicio(frame));
-            if (gd.isFullScreenSupported()) {
-                gd.setFullScreenWindow(frame);
-                // Intentar ajustar la DisplayMode a la resolución seleccionada
-                boolean ok = config.applyDisplayModeIfNeeded(gd);
-                if (!ok) {
-                    System.out.println("[ventanaInicio] applyDisplayMode failed at startup, using borderless fallback");
-                    // recreate borderless fullscreen
-                    frame.dispose();
-                    JFrame fb = new JFrame("Proyecto Final");
-                    fb.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    fb.setUndecorated(true);
-                    fb.setResizable(false);
-                    fb.getContentPane().add(new ventanaInicio(fb));
-                    fb.setBounds(0, 0, screenSize.width, screenSize.height);
-                    fb.setVisible(true);
-                    fb.requestFocus();
-                    return;
-                }
-            } else {
-                // Si no soporta full screen, decorar como no decorado y maximizar
-                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                frame.setVisible(true);
-            }
-        } else {
-             // En ventana normal limitar la resoluci�n al tama�o de pantalla
-             width = Math.min(width, screenSize.width);
-             height = Math.min(height, screenSize.height);
-            frame.setUndecorated(false);
-            frame.setResizable(true);
-            ventanaInicio panel = new ventanaInicio(frame);
-            // Asegurar que el panel tenga la resolución deseada como preferredSize
-            panel.setPreferredSize(new Dimension(width, height));
-            frame.getContentPane().add(panel);
-            // pack() ajusta el frame para que el área de contenido coincida con preferredSize
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
+         // Actualizar resolución en el manejador de escala para que otros paneles puedan adaptarse
+         ManejadorEscala.setResolution(screenSize.width, screenSize.height);
+
+         frameRef[0] = initial;
+
+         if (gd != null && gd.isFullScreenSupported()) {
+             try {
+                 gd.setFullScreenWindow(frameRef[0]);
+             } catch (Exception ex) {
+                 // fallback: maximizar ventana
+                 // intentar recrear como borderless que ocupa toda la pantalla (incluye area de taskbar)
+                 frameRef[0].dispose();
+                 frameRef[0] = new JFrame("Proyecto Final");
+                 frameRef[0].setUndecorated(true);
+                 frameRef[0].setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                 frameRef[0].getContentPane().add(panel);
+                 panel.setParentFrame(frameRef[0]);
+                 frameRef[0].setBounds(0, 0, screenSize.width, screenSize.height);
+                 frameRef[0].setVisible(true);
+                 // Forzar al frente temporalmente y luego desactivar alwaysOnTop (para no interferir con Alt-Tab)
+                 try { frameRef[0].setAlwaysOnTop(true); } catch (Exception ignore) {}
+                 try { frameRef[0].toFront(); } catch (Exception ignore) {}
+                 try {
+                     javax.swing.Timer t = new javax.swing.Timer(200, ev -> {
+                         try { frameRef[0].setAlwaysOnTop(false); } catch (Exception ignore) {}
+                         ((javax.swing.Timer)ev.getSource()).stop();
+                     });
+                     t.setRepeats(false);
+                     t.start();
+                 } catch (Exception ignore) {}
+             }
+         } else {
+             // Si no hay soporte exclusivo, recrear borderless y cubrir toda la pantalla
+             frameRef[0].dispose();
+             frameRef[0] = new JFrame("Proyecto Final");
+             frameRef[0].setUndecorated(true);
+             frameRef[0].setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+             frameRef[0].getContentPane().add(panel);
+             panel.setParentFrame(frameRef[0]);
+             frameRef[0].setBounds(0, 0, screenSize.width, screenSize.height);
+             frameRef[0].setVisible(true);
+             // Forzar al frente temporalmente y luego desactivar alwaysOnTop (para no interferir con Alt-Tab)
+             try { frameRef[0].setAlwaysOnTop(true); } catch (Exception ignore) {}
+             try { frameRef[0].toFront(); } catch (Exception ignore) {}
+             try {
+                 javax.swing.Timer t2 = new javax.swing.Timer(200, ev -> {
+                     try { frameRef[0].setAlwaysOnTop(false); } catch (Exception ignore) {}
+                     ((javax.swing.Timer)ev.getSource()).stop();
+                 });
+                 t2.setRepeats(false);
+                 t2.start();
+             } catch (Exception ignore) {}
          }
-         // En cualquier caso, después de mostrar el frame, intentar aplicar/normalizar display mode
-         // (si no hay GraphicsDevice válido, la llamada será ignorada)
-         config.applyDisplayModeIfNeeded(gd);
-         
-          frame.requestFocus();
+
+         frameRef[0].requestFocus();
       }
   }

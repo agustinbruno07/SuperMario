@@ -12,8 +12,8 @@ public class config extends JPanel {
     private static boolean pantallaCompleta = true;
     private static String dificultad = "Normal";
     
-    private static int resolucionAncho = 1920;
-    private static int resolucionAlto = 1080;
+    private static int resolucionAncho = 1366;
+    private static int resolucionAlto = 768;
     // Para restaurar el modo de pantalla original si cambiamos la DisplayMode
     private static DisplayMode previousDisplayMode = null;
     private JComboBox<String> comboResoluciones;
@@ -105,8 +105,9 @@ public class config extends JPanel {
         chkPantallaCompleta.setFont(new Font("Arial", Font.PLAIN, 14));
         chkPantallaCompleta.setForeground(Color.WHITE);
         chkPantallaCompleta.setBackground(new Color(20, 20, 30));
-        chkPantallaCompleta.setSelected(pantallaCompleta);
+        chkPantallaCompleta.setSelected(false); // forzada a ventana
         chkPantallaCompleta.setFocusPainted(false);
+        chkPantallaCompleta.setEnabled(false); // no permitir cambiar
         add(chkPantallaCompleta);
         
         JLabel lblJuego = new JLabel("JUEGO");
@@ -121,13 +122,14 @@ public class config extends JPanel {
         lblResolTexto.setForeground(Color.WHITE);
         add(lblResolTexto);
         
-        String[] baseRes = {"800x600", "1024x768", "1280x720", "1366x768", "1920x1080"};
+        String[] baseRes = {"1366x768"};
         comboResoluciones = new JComboBox<>(baseRes);
         comboResoluciones.setBounds(220, 320, 200, 25);
         comboResoluciones.setBackground(new Color(20, 20, 30));
         comboResoluciones.setForeground(Color.WHITE);
         comboResoluciones.setFont(new Font("Arial", Font.PLAIN, 14));
-        
+        comboResoluciones.setEnabled(false); // fijada a 1366x768
+
         String actualRes = resolucionAncho + "x" + resolucionAlto;
         // Si la resolución actual no está en la lista, agregarla y seleccionarla
         boolean encontrado = false;
@@ -209,12 +211,10 @@ public class config extends JPanel {
     private void guardarConfiguracion() {
         volumenMusica = sliderMusica.getValue();
         volumenEfectos = sliderEfectos.getValue();
-        pantallaCompleta = chkPantallaCompleta.isSelected();
-        
-        String res = (String) comboResoluciones.getSelectedItem();
-        String[] partes = res.split("x");
-        resolucionAncho = Integer.parseInt(partes[0]);
-        resolucionAlto = Integer.parseInt(partes[1]);
+        // Forzar valores fijos: siempre ventana y 1366x768
+        pantallaCompleta = false;
+        resolucionAncho = 1366;
+        resolucionAlto = 768;
         
         // Aplicar cambios inmediatamente
         aplicarCambiosInmediatos();
@@ -225,8 +225,8 @@ public class config extends JPanel {
         }
         
         JOptionPane.showMessageDialog(this,
-            "Configuraci�n aplicada correctamente",
-            "Configuraci�n Guardada",
+            "Configuración aplicada correctamente",
+            "Configuración Guardada",
             JOptionPane.INFORMATION_MESSAGE);
     }
     
@@ -401,31 +401,15 @@ public class config extends JPanel {
     private void restablecerValores() {
         sliderMusica.setValue(50);
         sliderEfectos.setValue(50);
-        chkPantallaCompleta.setSelected(true);
-        comboResoluciones.setSelectedItem("1920x1080");
+        chkPantallaCompleta.setSelected(false);
+        comboResoluciones.setSelectedItem("1366x768");
         
         JOptionPane.showMessageDialog(this, 
             "Valores restablecidos a predeterminados", 
             "Restablecer", 
             JOptionPane.INFORMATION_MESSAGE);
     }
-    
-    public static int getVolumenMusica() {
-        return volumenMusica;
-    }
-    
-    public static int getVolumenEfectos() {
-        return volumenEfectos;
-    }
-    
-    public static boolean isPantallaCompleta() {
-        return pantallaCompleta;
-    }
-    
-    public static String getDificultad() {
-        return dificultad;
-    }
-    
+
     public static int getResolucionAncho() {
         return resolucionAncho;
     }

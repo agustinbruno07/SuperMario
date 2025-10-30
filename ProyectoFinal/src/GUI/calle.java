@@ -19,6 +19,10 @@ public class calle extends JPanel implements KeyListener {
     private boolean estaEnTransicionIzquierda = false; // Para casa izquierda
     private boolean estaEnTransicionDerecha = false;   // NUEVO: Para casa derecha
 
+    // Resolución fija del juego
+    private static final int FIXED_WIDTH = 1366;
+    private static final int FIXED_HEIGHT = 768;
+
     public calle() {
         this(641, 692); 
     }
@@ -59,9 +63,25 @@ public class calle extends JPanel implements KeyListener {
         SwingUtilities.invokeLater(this::requestFocusInWindow);
 
         gameLoop = new Timer(16, e -> {
-            int w = Math.max(1, getWidth());
-            int h = Math.max(1, getHeight());
+            // Trabajamos en coordenadas lógicas (FIXED_WIDTH/FIXED_HEIGHT)
+            int w = FIXED_WIDTH;
+            int h = FIXED_HEIGHT;
             Rectangle bounds = new Rectangle(0, 0, w, h);
+
+            // Obtener escala actual para adaptar componentes Swing (labels) a fullscreen
+            double scaleX = (getWidth() > 0) ? (double) getWidth() / FIXED_WIDTH : 1.0;
+            double scaleY = (getHeight() > 0) ? (double) getHeight() / FIXED_HEIGHT : 1.0;
+
+            // Actualizar bounds de los JLabels para que sigan la posición escalada
+            int puertaX = (int) Math.round(641 * scaleX);
+            int puertaY = (int) Math.round(489 * scaleY);
+            int puertaW = Math.max(1, (int) Math.round(50 * scaleX));
+            int puertaH = Math.max(1, (int) Math.round(50 * scaleY));
+            labelPuerta.setBounds(puertaX, puertaY, puertaW, puertaH);
+
+            int msgW = Math.max(50, (int) Math.round(400 * scaleX));
+            int msgX = (int) Math.round((FIXED_WIDTH * scaleX - msgW) / 2.0);
+            mensajeLabel.setBounds(msgX, (int) Math.round(100 * scaleY), msgW, (int) Math.round(60 * scaleY));
 
             // 🔹 GUARDAR POSICIÓN ANTERIOR
             int oldX = player.getX();
@@ -72,8 +92,8 @@ public class calle extends JPanel implements KeyListener {
             if (leftPressed)  player.moveLeft();
             if (rightPressed) player.moveRight();
             
-            // 🔹 VERIFICAR COLISIÓN
-            if (colisiones.hayColision(player.getBounds(), w, h)) {
+            // 🔹 VERIFICAR COLISIÓN usando coordenadas lógicas
+            if (colisiones.hayColision(player.getBounds(), FIXED_WIDTH, FIXED_HEIGHT)) {
                 // Si hay colisión, volver a la posición anterior
                 player.setPosition(oldX, oldY);
             }
@@ -89,7 +109,7 @@ public class calle extends JPanel implements KeyListener {
 
     private void verificarPosicionPuerta() {
         Rectangle jugadorBounds = player.getBounds();
-        Rectangle puertaBounds = labelPuerta.getBounds();
+        Rectangle puertaBounds = new Rectangle(641, 489, 50, 50);
         
         estaEnPuerta = jugadorBounds.intersects(puertaBounds);
     }
@@ -101,11 +121,11 @@ public class calle extends JPanel implements KeyListener {
         estaEnTransicionIzquierda = (jugadorBounds.x <= 0 && Math.abs(jugadorBounds.y - 286) <= 20);
     }
 
-    // NUEVO MÃ‰TODO: Verificar posiciÃ³n para casa derecha
+    // NUEVO MÉTODO: Verificar posición para casa derecha
     private void verificarPosicionTransicionDerecha() {
         Rectangle jugadorBounds = player.getBounds();
         
-        // Para casa derecha (x=1302, y=267) con margen de Â±20 pÃ­xeles
+        // Para casa derecha (x=1302, y=267) con margen de ±20 píxeles
         estaEnTransicionDerecha = (jugadorBounds.x >= 1302 && Math.abs(jugadorBounds.y - 267) <= 20);
     }
 
@@ -164,7 +184,7 @@ public class calle extends JPanel implements KeyListener {
         if (!mensajeLabel.isVisible()) {
             mensajeLabel.setText(mensaje);
             mensajeLabel.setVisible(true);
-            int x = (getWidth() - mensajeLabel.getWidth()) / 2;
+            int x = (FIXED_WIDTH - mensajeLabel.getWidth()) / 2;
             mensajeLabel.setLocation(x, 100);
             mensajeTimer.start();
         }
@@ -174,8 +194,20 @@ public class calle extends JPanel implements KeyListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.drawImage(fondo, 0, 0, getWidth(), getHeight(), null);
+
+        // Escalar el contexto gráfico para que todo se dibuje en coordenadas lógicas
+        double sx = (getWidth() > 0) ? (double) getWidth() / FIXED_WIDTH : 1.0;
+        double sy = (getHeight() > 0) ? (double) getHeight() / FIXED_HEIGHT : 1.0;
+
+        java.awt.geom.AffineTransform original = g2.getTransform();
+        g2.scale(sx, sy);
+
+        // Dibujar fondo y jugador usando coordenadas lógicas
+        g2.drawImage(fondo, 0, 0, FIXED_WIDTH, FIXED_HEIGHT, null);
         player.draw(g2);
+
+        // Restaurar transform para que los componentes Swing (labels) no se vean afectados
+        g2.setTransform(original);
     }
 
     @Override

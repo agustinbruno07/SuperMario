@@ -1,16 +1,17 @@
 package GUI;
 
 public class ManejadorEscala {
-    // Resoluci�n base de dise�o (la original del juego)
-    private static final int BASE_WIDTH = 1280;
-    private static final int BASE_HEIGHT = 720;
+    // Resolución base de diseño del juego (fijada a 1366x768)
+    private static final int BASE_WIDTH = 1366;
+    private static final int BASE_HEIGHT = 768;
     
-    // Resoluci�n actual
+    // Resolución actual (por defecto igual a la base; no se cambiará dinámicamente)
     private static int currentWidth = BASE_WIDTH;
     private static int currentHeight = BASE_HEIGHT;
     
     
     public static void setResolution(int width, int height) {
+        // Método preservado por compatibilidad pero no recomendado usar.
         currentWidth = width;
         currentHeight = height;
     }

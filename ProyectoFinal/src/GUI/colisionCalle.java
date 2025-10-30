@@ -7,6 +7,8 @@ import javax.imageio.ImageIO;
 public class colisionCalle {
     
     private BufferedImage mascaraColision;
+    private boolean obstacleIsBright = true; // true: bright pixels are obstacles; false: dark pixels are obstacles
+    private static final int BRIGHTNESS_THRESHOLD = 128;
     
     public colisionCalle(String rutaMascara) {
         try {
@@ -15,6 +17,49 @@ public class colisionCalle {
             
             if (mascaraColision != null) {
                 System.out.println("✅ Máscara de colisión cargada: " + mascaraColision.getWidth() + "x" + mascaraColision.getHeight());
+                // Detectar automáticamente si la máscara marca obstáculos con píxeles claros o oscuros.
+                // Muestreamos la imagen con un paso para no iterar todos los píxeles si es muy grande.
+                int w = mascaraColision.getWidth();
+                int h = mascaraColision.getHeight();
+                long brightCount = 0;
+                long total = 0;
+                int maxSamples = 200_000; // límite de muestras para rendimiento
+                int step = 1;
+                long approx = (long) w * h;
+                if (approx > maxSamples) {
+                    // calcular paso para muestrear aproximadamente maxSamples píxeles
+                    step = (int) Math.max(1, Math.sqrt((double) (w * h) / maxSamples));
+                }
+                for (int y = 0; y < h; y += step) {
+                    for (int x = 0; x < w; x += step) {
+                        int argb = mascaraColision.getRGB(x, y);
+                        int alpha = (argb >> 24) & 0xFF;
+                        int red   = (argb >> 16) & 0xFF;
+                        int green = (argb >> 8)  & 0xFF;
+                        int blue  = argb & 0xFF;
+                        int brillo = (red + green + blue) / 3;
+                        // Considerar píxeles transparentes como no brillantes para el muestreo
+                        if (alpha == 0) {
+                            // ignorar
+                        } else {
+                            if (brillo > BRIGHTNESS_THRESHOLD) brightCount++;
+                            total++;
+                        }
+                    }
+                }
+                if (total > 0) {
+                    double pctBright = (double) brightCount / total;
+                    // Si la mayoría de píxeles muestreados son brillantes, asumimos que los obstáculos son píxeles oscuros
+                    // (porque fondo brillante ocupa más área). Si la mayoría son oscuros, invertimos.
+                    // Para mayor robustez, interpretamos que si pctBright < 0.5 entonces obstacles are bright.
+                    // Simplificamos: obstacleIsBright = pctBright >= 0.5 ? false : true;
+                    obstacleIsBright = pctBright < 0.5; // true -> obstacles are bright, false -> obstacles are dark
+                    System.out.println("[colisionCalle] muestreo brillo: brightCount=" + brightCount + ", total=" + total + ", pctBright=" + pctBright + ", obstacleIsBright=" + obstacleIsBright);
+                } else {
+                    // fallback: suponer que píxeles brillantes representan obstáculos (comportamiento original)
+                    obstacleIsBright = true;
+                    System.out.println("[colisionCalle] muestreo inválido, usando fallback obstacleIsBright=true");
+                }
             } else {
                 System.err.println("❌ mascaraColision es NULL");
             }
@@ -69,16 +114,21 @@ public class colisionCalle {
                     return true;
                 }
 
-                // Si la máscara usa blanco para bloquear (fallback): brillo > 128 => BLOQUEADO
                 int brillo = (red + green + blue) / 3;
-                if (brillo > 128) {
-                    return true;
+
+                // Determinar bloqueo según la regla detectada al cargar la máscara
+                if (obstacleIsBright) {
+                    // Obstáculos representados por píxeles brillantes
+                    if (brillo > BRIGHTNESS_THRESHOLD) return true;
+                } else {
+                    // Obstáculos representados por píxeles oscuros
+                    if (brillo < BRIGHTNESS_THRESHOLD) return true;
                 }
             } else {
                 // Si el punto está fuera de la máscara, podemos considerar bloqueo opcionalmente.
                 // Por ahora lo ignoramos (no colisión) — si prefieres tratar fuera como bloqueado,
                 // devuelve true aquí.
-            }	
+            } 	
         }
 
         return false; // No hay colisión detectada
